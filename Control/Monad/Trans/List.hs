@@ -6,6 +6,7 @@ import Control.Applicative
 import Control.Arrow
 import Control.Monad
 import Control.Monad.Fix
+import Control.Monad.Trans.Class
 import Data.Functor.Classes
 import Data.List.NonEmpty (NonEmpty (..), intersperse)
 import Data.Maybe
@@ -18,6 +19,8 @@ newtype ListT m a = ListT { runListT :: m (Maybe (a, ListT m a)) }
 toListM :: Monad m => ListT m a -> m [a]
 toListM (ListT xm) = xm >>= \ case Nothing -> pure []
                                    Just (x, xs) -> (x:) <$> toListM xs
+
+instance MonadTrans ListT where lift = ListT . fmap (Just . flip (,) empty)
 
 instance Eq1 m => Eq1 (ListT m) where
     liftEq (==) (ListT x) (ListT y) =
