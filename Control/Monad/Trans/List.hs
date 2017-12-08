@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
+{-# OPTIONS_GHC -Wno-missing-signatures #-}
 
 module Control.Monad.Trans.List (ListT (..), toListM) where
 
@@ -80,7 +81,8 @@ instance Monad m => MonadPlus (ListT m) where
 instance MonadFix m => MonadFix (ListT m) where
     mfix f = ListT $ (flip fmap . mfix) (runListT . f . fst . fromJust) . fmap $
              id *** (pure . mfix $
-                     ListT <<< runListT . f >=> \ case Just (_, xs) -> runListT xs)
+                     ListT <<< runListT . f >=> \ case Just (_, xs) -> runListT xs
+                                                       Nothing -> error "Nothing")
 
 intercalate :: Semigroup a => a -> NonEmpty a -> a
 intercalate a = sconcat . intersperse a
