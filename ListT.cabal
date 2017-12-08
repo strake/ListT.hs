@@ -1,6 +1,6 @@
 name:                ListT
 version:             0.1.0.0
--- synopsis:            
+synopsis:            List transformer
 -- description:         
 license:             BSD3
 license-file:        LICENSE
