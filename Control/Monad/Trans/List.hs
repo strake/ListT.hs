@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
 {-# OPTIONS_GHC -Wno-missing-signatures #-}
 
-module Control.Monad.Trans.List (ListT (..), toListM) where
+module Control.Monad.Trans.List (ListT (..), fromList, toListM) where
 
 import Control.Applicative
 import Control.Arrow
@@ -16,6 +16,10 @@ import Data.Semigroup
 
 newtype ListT m a = ListT { runListT :: m (Maybe (a, ListT m a)) }
   deriving (Functor, Foldable, Traversable)
+
+fromList :: Monad m => [a] -> ListT m a
+fromList = ListT . pure . \ case [] -> Nothing
+                                 x:xs -> Just (x, fromList xs)
 
 toListM :: Monad m => ListT m a -> m [a]
 toListM (ListT xm) = xm >>= \ case Nothing -> pure []

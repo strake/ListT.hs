@@ -24,3 +24,16 @@ library
   default-language:    Haskell2010
   default-extensions:  LambdaCase
   ghc-options:         -Wall -Wno-name-shadowing
+
+test-suite tests
+  type:                exitcode-stdio-1.0
+  main-is:             test.hs
+  other-modules:       Test.List
+  build-depends:       ListT
+                     , base >=4.9 && <5
+                     , smallcheck >=1.1.2 && <1.2
+                     , tasty >=0.11 && <0.12
+                     , tasty-smallcheck >=0.8.1 && <0.9
+                     , transformers
+  default-language:    Haskell2010
+  default-extensions:  LambdaCase
