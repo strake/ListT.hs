@@ -17,9 +17,8 @@ import Data.Semigroup
 newtype ListT m a = ListT { runListT :: m (Maybe (a, ListT m a)) }
   deriving (Functor, Foldable, Traversable)
 
-fromList :: Monad m => [a] -> ListT m a
-fromList = ListT . pure . \ case [] -> Nothing
-                                 x:xs -> Just (x, fromList xs)
+fromList :: (Foldable f, Applicative p) => f a -> ListT p a
+fromList = ListT . pure . foldr (\ a -> Just . (,) a . ListT . pure) Nothing
 
 toListM :: Monad m => ListT m a -> m [a]
 toListM = fmap ($ []) . foldlM (\ f a -> pure (f . (a:))) id
