@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
 {-# OPTIONS_GHC -Wno-missing-signatures #-}
 
-module Control.Monad.Trans.List (ListT (..), fromList, toListM) where
+module Control.Monad.Trans.List (ListT (..), fromList, toListM, toReverseListM, foldlM) where
 
 import Control.Applicative
 import Control.Arrow
@@ -22,8 +22,13 @@ fromList = ListT . pure . \ case [] -> Nothing
                                  x:xs -> Just (x, fromList xs)
 
 toListM :: Monad m => ListT m a -> m [a]
-toListM (ListT xm) = xm >>= \ case Nothing -> pure []
-                                   Just (x, xs) -> (x:) <$> toListM xs
+toListM = fmap ($ []) . foldlM (\ f a -> pure (f . (a:))) id
+
+toReverseListM :: Monad m => ListT m a -> m [a]
+toReverseListM = foldlM (\ as a -> pure (a:as)) []
+
+foldlM :: Monad m => (b -> a -> m b) -> b -> ListT m a -> m b
+foldlM f b = runListT >=> maybe (pure b) (\ (a, as) -> f b a >>= flip (foldlM f) as)
 
 instance MonadTrans ListT where lift = ListT . fmap (Just . flip (,) empty)
 
