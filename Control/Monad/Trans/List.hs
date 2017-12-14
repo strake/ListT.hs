@@ -54,8 +54,7 @@ instance Eq1 m => Eq1 (ListT m) where
 
 instance Ord1 m => Ord1 (ListT m) where
     liftCompare cmp (ListT x) (ListT y) =
-        (liftCompare . liftCompare) (\ (x, xs) (y, ys) ->
-                                     x `cmp` y <> liftCompare cmp xs ys) x y
+        (liftCompare . liftCompare) (\ (x, xs) (y, ys) -> cmp x y <> liftCompare cmp xs ys) x y
 
 instance Show1 m => Show1 (ListT m) where
     liftShowsPrec sp sl n (ListT x) = fst (show1Methods sp sl) n x
@@ -75,9 +74,7 @@ show1Methods sp sl =
 
 instance (Eq a, Eq1 m) => Eq (ListT m a) where (==) = liftEq (==)
 instance (Ord a, Ord1 m) => Ord (ListT m a) where compare = liftCompare compare
-instance (Show a, Show1 m) => Show (ListT m a) where
-    showsPrec = liftShowsPrec showsPrec showList
-    showList = liftShowList showsPrec showList
+instance (Show a, Show1 m) => Show (ListT m a) where showsPrec = showsPrec1
 
 instance Applicative p => Applicative (ListT p) where
     pure x = ListT . pure $ Just (x, ListT (pure Nothing))
