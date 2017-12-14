@@ -2,7 +2,8 @@
 {-# OPTIONS_GHC -Wno-missing-signatures #-}
 
 module Control.Monad.Trans.List
-  (ListT (..), fromList, toListM, toReverseListM, foldlM, traverseM) where
+  (ListT (..),
+   fromList, toListM, toReverseListM, foldlM, traverseM, consF, unfoldrF, splitAtM) where
 
 import Control.Applicative
 import Control.Arrow
@@ -32,6 +33,18 @@ foldlM f b = runListT >=> maybe (pure b) (\ (a, as) -> f b a >>= flip (foldlM f)
 
 traverseM :: Monad m => (a -> m b) -> ListT m a -> ListT m b
 traverseM f = ListT <<< traverse (f *=* pure . traverseM f) <=< runListT
+
+consF :: Functor f => f a -> ListT f a -> ListT f a
+consF am as = ListT (Just . flip (,) as <$> am)
+
+unfoldrF :: Functor f => (b -> f (Maybe (a, b))) -> b -> ListT f a
+unfoldrF f = ListT . (fmap . fmap) (id *** unfoldrF f) . f
+
+splitAtM :: (Monad m, Integral n) => n -> ListT m a -> m ([a], ListT m a)
+splitAtM 0 = pure . (,) []
+splitAtM n = runListT >=> \ case
+    Nothing -> pure ([], empty)
+    Just (a, as) -> ((:) a *** id) <$> splitAtM (n-1) as
 
 instance MonadTrans ListT where lift = ListT . fmap (Just . flip (,) empty)
 
