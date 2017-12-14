@@ -1,7 +1,8 @@
 {-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
 {-# OPTIONS_GHC -Wno-missing-signatures #-}
 
-module Control.Monad.Trans.List (ListT (..), fromList, toListM, toReverseListM, foldlM) where
+module Control.Monad.Trans.List
+  (ListT (..), fromList, toListM, toReverseListM, foldlM, traverseM) where
 
 import Control.Applicative
 import Control.Arrow
@@ -9,10 +10,10 @@ import Control.Monad
 import Control.Monad.Fix
 import Control.Monad.Trans.Class
 import Data.Functor.Classes
-import Data.List.NonEmpty (NonEmpty (..), intersperse)
 import Data.Maybe
 import Data.Monoid hiding ((<>))
 import Data.Semigroup
+import Util ((*=*), intercalate, list')
 
 newtype ListT m a = ListT { runListT :: m (Maybe (a, ListT m a)) }
   deriving (Functor, Foldable, Traversable)
@@ -28,6 +29,9 @@ toReverseListM = foldlM (\ as a -> pure (a:as)) []
 
 foldlM :: Monad m => (b -> a -> m b) -> b -> ListT m a -> m b
 foldlM f b = runListT >=> maybe (pure b) (\ (a, as) -> f b a >>= flip (foldlM f) as)
+
+traverseM :: Monad m => (a -> m b) -> ListT m a -> ListT m b
+traverseM f = ListT <<< traverse (f *=* pure . traverseM f) <=< runListT
 
 instance MonadTrans ListT where lift = ListT . fmap (Just . flip (,) empty)
 
@@ -46,7 +50,7 @@ instance Show1 m => Show1 (ListT m) where
 
 show1Methods sp sl =
     (l . l) (pure f,
-             list id $
+             list' id $
              between '[' ']' . appEndo . intercalate (Endo (", " ++)) . fmap (Endo . f))
   where l :: Show1 f => (Int -> a -> ShowS, [a] -> ShowS) -> (Int -> f a -> ShowS, [f a] -> ShowS)
         l (sp, sl) = (liftShowsPrec sp sl, liftShowList sp sl)
@@ -91,10 +95,3 @@ instance MonadFix m => MonadFix (ListT m) where
              id *** (pure . mfix $
                      ListT <<< runListT . f >=> \ case Just (_, xs) -> runListT xs
                                                        Nothing -> error "Nothing")
-
-intercalate :: Semigroup a => a -> NonEmpty a -> a
-intercalate a = sconcat . intersperse a
-
-list :: b -> (NonEmpty a -> b) -> [a] -> b
-list x _ [] = x
-list _ f (x:xs) = f (x:|xs)
