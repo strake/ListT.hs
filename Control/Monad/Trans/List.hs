@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
+{-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable, ScopedTypeVariables #-}
 {-# OPTIONS_GHC -Wno-missing-signatures #-}
 
 module Control.Monad.Trans.List
@@ -91,9 +91,7 @@ instance Monad m => Monad (ListT m) where
     xm >>= f = join (f <$> xm)
       where join (ListT xm) = ListT $ xm >>= \ case
                 Nothing -> pure Nothing
-                Just (ListT ym, xss) -> ym >>= \ case
-                    Nothing -> runListT (join xss)
-                    Just (y, ys) -> (pure . Just) (y, ys <|> join xss)
+                Just (ys, xss) -> runListT $ ys <|> join xss
 
 instance Monad m => MonadPlus (ListT m) where
     ListT xm `mplus` ys = ListT $ xm >>= \ case
